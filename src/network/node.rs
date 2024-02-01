@@ -1,14 +1,14 @@
 use tokio::net::{TcpListener, TcpStream};
 use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
-use super::message::{Message, MessageType};
 use serde_json;
 use std::sync::Arc;
 use std::collections::HashMap;
 use tokio::sync::Mutex;
+use super::message::{Message, MessageType}; // Make sure this path is correct for your project structure
 
 pub struct Node {
     address: String,
-    peers: Arc<Mutex<HashMap<String, TcpStream>>>,
+    peers: Arc<Mutex<HashMap<String, Arc<Mutex<TcpStream>>>>>,
 }
 
 impl Node {
@@ -27,12 +27,12 @@ impl Node {
             println!("New connection from {}", addr);
             let peer_address = addr.to_string();
             let peers = self.peers.clone();
+            let shared_socket = Arc::new(Mutex::new(socket));
 
-            // Add the peer to the peers list
-            peers.lock().await.insert(peer_address.clone(), socket.try_clone().unwrap());
+            peers.lock().await.insert(peer_address.clone(), shared_socket.clone());
 
             tokio::spawn(async move {
-                if let Err(e) = handle_connection(socket, peers, peer_address).await {
+                if let Err(e) = handle_connection(shared_socket, peers, peer_address).await {
                     eprintln!("Failed to handle connection: {}", e);
                 }
             });
@@ -40,16 +40,16 @@ impl Node {
 
         Ok(())
     }
-
-    // Additional functionalities like connecting to other nodes, broadcasting messages
-    // can be implemented here
 }
 
-async fn handle_connection(mut socket: TcpStream, peers: Arc<Mutex<HashMap<String, TcpStream>>>, peer_address: String) -> io::Result<()> {
+async fn handle_connection(socket: Arc<Mutex<TcpStream>>, peers: Arc<Mutex<HashMap<String, Arc<Mutex<TcpStream>>>>>, peer_address: String) -> io::Result<()> {
     let mut buffer = [0; 1024];
 
     loop {
-        let n = socket.read(&mut buffer).await?;
+        let mut locked_socket = socket.lock().await;
+        let n = locked_socket.read(&mut buffer).await?;
+        drop(locked_socket); // Release the lock explicitly
+
         if n == 0 { break; }
 
         let message_str = String::from_utf8_lossy(&buffer[..n]);
@@ -66,16 +66,16 @@ async fn handle_connection(mut socket: TcpStream, peers: Arc<Mutex<HashMap<Strin
                 _ => {}
             }
 
-            // Example: Echo the received message back to all peers
-            for (addr, peer_socket) in peers.lock().await.iter_mut() {
+            let peers_lock = peers.lock().await;
+            for (addr, peer_socket) in peers_lock.iter() {
                 if addr != &peer_address {
-                    let _ = peer_socket.write_all(message_str.as_bytes()).await;
+                    let mut locked_peer_socket = peer_socket.lock().await;
+                    let _ = locked_peer_socket.write_all(message_str.as_bytes()).await;
                 }
             }
         }
     }
 
-    // Remove the peer from the list when disconnected
     peers.lock().await.remove(&peer_address);
 
     Ok(())
