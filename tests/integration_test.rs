@@ -1,8 +1,8 @@
-extern crate lag_cryptocurrency;
+extern crate LAG;
 
-use lag_cryptocurrency::blockchain::Blockchain;
-use lag_cryptocurrency::wallet::{Wallet, WalletKeypair};
-use lag_cryptocurrency::network::Node;
+use  LAG::blockchain::Blockchain;
+use  LAG::wallet::{Wallet, WalletKeypair};
+use  LAG::network::Node;
 
 #[test]
 fn test_blockchain_integration() {

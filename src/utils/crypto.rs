@@ -1,5 +1,5 @@
 use sha2::{Sha256, Digest};
-use serde::{Serialize};
+use serde::Serialize;
 use hex;
 
 /// Calculates the SHA-256 hash of the input data.

@@ -1,34 +1,18 @@
-use ed25519_dalek::{Keypair, PublicKey, SecretKey, Signature, Signer};
-use rand::rngs::OsRng;
-use serde::{Serialize, Deserialize};
+use ring::signature::{self, Ed25519KeyPair};
+use ring::rand::SystemRandom;
 
-#[derive(Serialize, Deserialize)]
 pub struct WalletKeypair {
-    keypair: Keypair,
+    keypair: Ed25519KeyPair,
 }
 
 impl WalletKeypair {
-    /// Creates a new WalletKeypair.
-    pub fn new() -> Self {
-        let mut csprng = OsRng{};
-        let keypair = Keypair::generate(&mut csprng);
-        WalletKeypair { keypair }
+    // Load an existing PKCS#8-encoded keypair
+    pub fn from_pkcs8(pkcs8_bytes: &[u8]) -> Result<Self, ring::error::KeyRejected> {
+        let keypair = Ed25519KeyPair::from_pkcs8(pkcs8_bytes)?;
+        Ok(WalletKeypair { keypair })
     }
 
-    /// Returns the public key of the keypair.
-    pub fn public_key(&self) -> PublicKey {
-        self.keypair.public
+    pub fn sign(&self, message: &[u8]) -> Vec<u8> {
+        self.keypair.sign(message).as_ref().to_vec()
     }
-
-    /// Returns the secret key of the keypair.
-    pub fn secret_key(&self) -> SecretKey {
-        self.keypair.secret
-    }
-
-    /// Signs a message with the secret key.
-    pub fn sign(&self, message: &[u8]) -> Signature {
-        self.keypair.sign(message)
-    }
-
-    // Additional functionalities like verifying signatures can be added here.
 }

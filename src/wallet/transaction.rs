@@ -1,45 +1,30 @@
-use ed25519_dalek::{PublicKey, SecretKey, Signature, Signer, Verifier};
+use ring::signature::{Ed25519KeyPair, Signature, verify, ED25519};
 use serde::{Serialize, Deserialize};
-use super::keypair::WalletKeypair;
-use sha2::{Sha256, Digest};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Transaction {
-    from: PublicKey,
-    to: PublicKey,
-    amount: u64,
-    signature: Option<Signature>,
+    pub from: Vec<u8>, // PublicKey as bytes
+    pub to: Vec<u8>, // PublicKey as bytes for recipient
+    pub amount: u64,
+    pub signature: Vec<u8>,
 }
 
 impl Transaction {
-    /// Creates a new transaction.
-    pub fn new(from: PublicKey, to: PublicKey, amount: u64) -> Self {
+    pub fn new(from: Vec<u8>, to: Vec<u8>, amount: u64) -> Self {
         Transaction {
             from,
             to,
             amount,
-            signature: None,
+            signature: vec![],
         }
     }
 
-    /// Signs the transaction with the sender's private key.
-    pub fn sign(&mut self, keypair: &WalletKeypair) {
-        let message = self.to_hashable();
-        let signature = keypair.sign(message.as_bytes());
-        self.signature = Some(signature);
+    pub fn sign(&mut self, keypair: &Ed25519KeyPair, message: &[u8]) {
+        let sig = keypair.sign(message);
+        self.signature = sig.as_ref().to_vec();
     }
 
-    /// Verifies the transaction's signature.
-    pub fn verify(&self) -> bool {
-        if let Some(signature) = &self.signature {
-            self.from.verify(self.to_hashable().as_bytes(), signature).is_ok()
-        } else {
-            false
-        }
-    }
-
-    /// Converts the transaction into a string that will be hashed and signed.
-    fn to_hashable(&self) -> String {
-        format!("{}{}{}", self.from.as_bytes().to_vec().iter().map(|byte| format!("{:02x}", byte)).collect::<String>(), self.to.as_bytes().to_vec().iter().map(|byte| format!("{:02x}", byte)).collect::<String>(), self.amount)
+    pub fn verify(&self, message: &[u8]) -> bool {
+        verify(&ED25519, self.from.as_slice().into(), message, self.signature.as_slice()).is_ok()
     }
 }
