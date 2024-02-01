@@ -1,56 +1,38 @@
-mod blockchain;
-mod network;
 mod wallet;
 mod utils;
 
-use blockchain::{Blockchain, Block, ProofOfWork};
-use network::Node;
-use wallet::{Wallet, WalletKeypair, Transaction};
-use std::env;
+use crate::wallet::keypair::WalletKeypair;
+use crate::wallet::transaction::Transaction;
 
-#[tokio::main]
-async fn main() {
-    // Initialize Blockchain with a genesis block
-    let mut blockchain = Blockchain::new();
-    let proof_of_work = ProofOfWork::new(2); // Example difficulty
+fn main() {
+    // Initialize sodiumoxide library (necessary for cryptographic operations)
+    sodiumoxide::init().expect("Failed to initialize sodiumoxide");
 
-    // Initialize Network Node
-    let node_address = env::args().nth(1).unwrap_or_else(|| "127.0.0.1:8080".to_string());
-    let node = Node::new(node_address.clone());
-    tokio::spawn(async move {
-        if let Err(e) = node.start().await {
-            eprintln!("Node encountered an error: {}", e);
-        }
-    });
+    // Generate a new keypair for the sender
+    let sender_keypair = WalletKeypair::new();
+    let sender_public_key_hex = sender_keypair.public_key_hex();
 
-    // Initialize Wallet
-    let wallet_keypair = WalletKeypair::new();
-    let wallet = Wallet::new(wallet_keypair.clone());
+    // Assume we have a recipient's public key in hex format
+    let recipient_public_key_hex = "some_hex_public_key_of_recipient".to_string();
 
     // Create a new transaction
-    let transaction = Transaction::new(wallet.public_key(), "recipient_public_key".to_string(), 100);
-    let signed_transaction = wallet.sign_transaction(transaction);
+    let mut transaction = Transaction::new(
+        sender_public_key_hex.clone(),
+        recipient_public_key_hex,
+        100, // Let's say we're transferring 100 units of our cryptocurrency
+    );
 
-    // Example: Mining a new block with the transaction
-    let mut new_block = Block::new(blockchain.blocks.last().unwrap().index + 1, serde_json::to_string(&signed_transaction).unwrap(), blockchain.blocks.last().unwrap().hash.clone());
-    proof_of_work.mine(&mut new_block);
-    blockchain.add_block(new_block);
+    // Sign the transaction with the sender's keypair
+    transaction.sign(&sender_keypair);
 
-    println!("LAG Cryptocurrency running on {}", node_address);
+    // Output the transaction details
+    println!("Transaction: {:?}", transaction);
 
-    // Display the blockchain for demonstration
-    for block in blockchain.blocks.iter() {
-        println!("Block Index: {}", block.index);
-        println!("Block Timestamp: {}", block.timestamp);
-        println!("Block Data: {}", block.data);
-        println!("Prev Hash: {}", block.previous_hash);
-        println!("Hash: {}", block.hash);
-        println!("Nonce: {}", block.nonce);
-        println!("-----------------------");
-    }
+    // Verify the transaction signature
+    let is_signature_valid = transaction.verify_signature();
+    println!("Is the signature valid? {}", is_signature_valid);
 
-    // Prevent the program from exiting immediately
-    loop {
-        tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
-    }
+    // This example simplifies many aspects of a real-world cryptocurrency transaction,
+    // such as handling transaction fees, nonce, and the actual transfer of balances.
 }
+
