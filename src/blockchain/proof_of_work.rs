@@ -1,5 +1,4 @@
 use super::block::Block;
-use sha2::{Sha256, Digest};
 
 pub struct ProofOfWork {
     pub difficulty: usize,

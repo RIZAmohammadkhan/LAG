@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 serde_bytes = "0.11"
 hex = "0.4"
-ring = "0.16.20"
+sodiumoxide = "0.2.7"
 ed25519-dalek = "2.0"
 rand = "0.8"
 serde = { version = "1.0", features = ["derive"] }

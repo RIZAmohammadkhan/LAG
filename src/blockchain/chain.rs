@@ -1,6 +1,4 @@
 use super::block::Block;
-use sha2::{Sha256, Digest};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct Blockchain {
     pub blocks: Vec<Block>,

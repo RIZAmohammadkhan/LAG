@@ -1,18 +1,18 @@
-use ring::signature::{self, Ed25519KeyPair};
-use ring::rand::SystemRandom;
+use sodiumoxide::crypto::sign;
+use sodiumoxide::crypto::sign::ed25519::{PublicKey, SecretKey, Signature};
 
 pub struct WalletKeypair {
-    keypair: Ed25519KeyPair,
+    pub public_key: PublicKey,
+    secret_key: SecretKey,
 }
 
 impl WalletKeypair {
-    // Load an existing PKCS#8-encoded keypair
-    pub fn from_pkcs8(pkcs8_bytes: &[u8]) -> Result<Self, ring::error::KeyRejected> {
-        let keypair = Ed25519KeyPair::from_pkcs8(pkcs8_bytes)?;
-        Ok(WalletKeypair { keypair })
+    pub fn new() -> Self {
+        let (public_key, secret_key) = sign::gen_keypair();
+        WalletKeypair { public_key, secret_key }
     }
 
-    pub fn sign(&self, message: &[u8]) -> Vec<u8> {
-        self.keypair.sign(message).as_ref().to_vec()
+    pub fn sign(&self, message: &[u8]) -> Signature {
+        sign::sign_detached(message, &self.secret_key)
     }
 }

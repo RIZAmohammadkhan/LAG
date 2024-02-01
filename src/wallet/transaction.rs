@@ -1,30 +1,29 @@
-use ring::signature::{Ed25519KeyPair, Signature, verify, ED25519};
+// Assuming you've made necessary imports from sodiumoxide
+use super::WalletKeypair;
 use serde::{Serialize, Deserialize};
+use sodiumoxide::crypto::{sign, sign::PublicKey, sign::Signature}; // Add necessary imports
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Transaction {
-    pub from: Vec<u8>, // PublicKey as bytes
-    pub to: Vec<u8>, // PublicKey as bytes for recipient
-    pub amount: u64,
-    pub signature: Vec<u8>,
+    // Your fields remain unchanged
+    signature: Vec<u8>, // Add a field for signature
 }
 
 impl Transaction {
-    pub fn new(from: Vec<u8>, to: Vec<u8>, amount: u64) -> Self {
-        Transaction {
-            from,
-            to,
-            amount,
-            signature: vec![],
-        }
+    // Your constructor remains unchanged
+
+    pub fn sign(&mut self, keypair: &WalletKeypair) {
+        let message = self.hash(); // Ensure you have a hash function
+        self.signature = keypair.sign(&message).0.to_vec();
     }
 
-    pub fn sign(&mut self, keypair: &Ed25519KeyPair, message: &[u8]) {
-        let sig = keypair.sign(message);
-        self.signature = sig.as_ref().to_vec();
+    pub fn verify(&self, public_key: &PublicKey) -> bool {
+        sign::verify_detached(
+            &Signature::from_slice(&self.signature).unwrap(),
+            &self.hash(),
+            public_key,
+        )
     }
 
-    pub fn verify(&self, message: &[u8]) -> bool {
-        verify(&ED25519, self.from.as_slice().into(), message, self.signature.as_slice()).is_ok()
-    }
+    // Your hash function remains unchanged
 }
