@@ -1,19 +1,19 @@
-use super::keypair::WalletKeypair;
-use ed25519_dalek::{Signature, Signer};
+use ed25519_dalek::{PublicKey, SecretKey, Signature, Signer, Verifier};
 use serde::{Serialize, Deserialize};
+use super::keypair::WalletKeypair;
 use sha2::{Sha256, Digest};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Transaction {
-    from: String, // Public key of the sender
-    to: String,   // Public key of the receiver
+    from: PublicKey,
+    to: PublicKey,
     amount: u64,
-    signature: Option<Signature>, // Digital signature to verify the transaction
+    signature: Option<Signature>,
 }
 
 impl Transaction {
     /// Creates a new transaction.
-    pub fn new(from: String, to: String, amount: u64) -> Self {
+    pub fn new(from: PublicKey, to: PublicKey, amount: u64) -> Self {
         Transaction {
             from,
             to,
@@ -22,26 +22,24 @@ impl Transaction {
         }
     }
 
-    /// Signs the transaction with a given keypair.
+    /// Signs the transaction with the sender's private key.
     pub fn sign(&mut self, keypair: &WalletKeypair) {
-        let message = self.to_string();
+        let message = self.to_hashable();
         let signature = keypair.sign(message.as_bytes());
         self.signature = Some(signature);
-    }
-
-    /// Converts the transaction into a string format for signing.
-    pub fn to_string(&self) -> String {
-        format!("{}:{}:{}", self.from, self.to, self.amount)
     }
 
     /// Verifies the transaction's signature.
     pub fn verify(&self) -> bool {
         if let Some(signature) = &self.signature {
-            let public_key = PublicKey::from_str(&self.from).unwrap();
-            public_key.verify(self.to_string().as_bytes(), signature).is_ok()
+            self.from.verify(self.to_hashable().as_bytes(), signature).is_ok()
         } else {
             false
         }
     }
-}
 
+    /// Converts the transaction into a string that will be hashed and signed.
+    fn to_hashable(&self) -> String {
+        format!("{}{}{}", self.from.as_bytes().to_vec().iter().map(|byte| format!("{:02x}", byte)).collect::<String>(), self.to.as_bytes().to_vec().iter().map(|byte| format!("{:02x}", byte)).collect::<String>(), self.amount)
+    }
+}

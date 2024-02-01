@@ -1,16 +1,18 @@
 use sha2::{Sha256, Digest};
-use serde::{Serialize, Deserialize};
+use serde::{Serialize};
+use hex;
 
 /// Calculates the SHA-256 hash of the input data.
-pub fn hash(data: &[u8]) -> Vec<u8> {
+/// Returns the hash as a hexadecimal string.
+pub fn hash(data: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(data);
-    hasher.finalize().to_vec()
+    hex::encode(hasher.finalize())
 }
 
-/// A utility function to hash any serializable data using SHA-256.
-/// Returns the hash as a hexadecimal string.
-pub fn hash_serialize<T: Serialize>(data: &T) -> String {
-    let serialized = serde_json::to_string(data).expect("Failed to serialize data");
-    hex::encode(hash(serialized.as_bytes()))
+/// Hashes any serializable data using SHA-256 and returns the hash as a hexadecimal string.
+/// This function is useful for hashing complex data structures.
+pub fn hash_serialize<T: Serialize>(data: &T) -> Result<String, serde_json::Error> {
+    let serialized = serde_json::to_string(data)?;
+    Ok(hash(serialized.as_bytes()))
 }
