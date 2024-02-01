@@ -10,6 +10,3 @@ pub use blockchain::{Blockchain, Block, ProofOfWork}; // Assuming ProofOfWork is
 pub use network::{Node, Message, MessageType}; // Assuming these are key parts of your network logic.
 pub use wallet::{WalletKeypair, Transaction}; // Directly use WalletKeypair and Transaction from the wallet module.
 pub use utils::{hash, hash_serialize}; // Assuming these are utility functions you've implemented for hashing.
-
-// You might also include any additional public functions, structs, or enums here
-// that are essential for the operation of your cryptocurrency and need to be accessible externally.
