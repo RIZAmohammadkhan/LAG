@@ -1,10 +1,10 @@
-use tokio::net::{TcpListener, TcpStream};
-use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
+use super::message::{Message, MessageType};
 use serde_json;
-use std::sync::Arc;
 use std::collections::HashMap;
-use tokio::sync::Mutex;
-use super::message::{Message, MessageType}; // Make sure this path is correct for your project structure
+use std::sync::Arc;
+use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpListener, TcpStream};
+use tokio::sync::Mutex; // Make sure this path is correct for your project structure
 
 pub struct Node {
     address: String,
@@ -29,7 +29,10 @@ impl Node {
             let peers = self.peers.clone();
             let shared_socket = Arc::new(Mutex::new(socket));
 
-            peers.lock().await.insert(peer_address.clone(), shared_socket.clone());
+            peers
+                .lock()
+                .await
+                .insert(peer_address.clone(), shared_socket.clone());
 
             tokio::spawn(async move {
                 if let Err(e) = handle_connection(shared_socket, peers, peer_address).await {
@@ -42,7 +45,11 @@ impl Node {
     }
 }
 
-async fn handle_connection(socket: Arc<Mutex<TcpStream>>, peers: Arc<Mutex<HashMap<String, Arc<Mutex<TcpStream>>>>>, peer_address: String) -> io::Result<()> {
+async fn handle_connection(
+    socket: Arc<Mutex<TcpStream>>,
+    peers: Arc<Mutex<HashMap<String, Arc<Mutex<TcpStream>>>>>,
+    peer_address: String,
+) -> io::Result<()> {
     let mut buffer = [0; 1024];
 
     loop {
@@ -50,7 +57,9 @@ async fn handle_connection(socket: Arc<Mutex<TcpStream>>, peers: Arc<Mutex<HashM
         let n = locked_socket.read(&mut buffer).await?;
         drop(locked_socket); // Release the lock explicitly
 
-        if n == 0 { break; }
+        if n == 0 {
+            break;
+        }
 
         let message_str = String::from_utf8_lossy(&buffer[..n]);
         if let Ok(message) = serde_json::from_str::<Message>(&message_str) {
@@ -58,10 +67,10 @@ async fn handle_connection(socket: Arc<Mutex<TcpStream>>, peers: Arc<Mutex<HashM
             match message.message_type {
                 MessageType::NewBlock => {
                     // Implement logic for handling a new block
-                },
+                }
                 MessageType::NewTransaction => {
                     // Implement logic for handling a new transaction
-                },
+                }
                 // Handle other message types
                 _ => {}
             }

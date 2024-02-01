@@ -25,6 +25,8 @@ impl ProofOfWork {
 
     /// Validates that a block's hash meets the difficulty criteria.
     pub fn validate(&self, block: &Block) -> bool {
-        block.hash.starts_with(&String::from_utf8(vec![b'0'; self.difficulty]).unwrap())
+        block
+            .hash
+            .starts_with(&String::from_utf8(vec![b'0'; self.difficulty]).unwrap())
     }
 }

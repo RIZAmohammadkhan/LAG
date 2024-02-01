@@ -29,7 +29,9 @@ impl Blockchain {
     /// Validates the blockchain's integrity.
     pub fn is_valid(&self) -> bool {
         for (i, current_block) in self.blocks.iter().enumerate() {
-            if i == 0 { continue; } // Skip genesis block
+            if i == 0 {
+                continue;
+            } // Skip genesis block
 
             let previous_block = &self.blocks[i - 1];
             if current_block.hash != Block::calculate_hash(current_block) {

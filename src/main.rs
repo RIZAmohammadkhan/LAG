@@ -1,5 +1,5 @@
-mod wallet;
 mod utils;
+mod wallet;
 
 use crate::wallet::keypair::WalletKeypair;
 use crate::wallet::transaction::Transaction;
@@ -31,6 +31,4 @@ fn main() {
     // Verify the transaction signature
     let is_signature_valid = transaction.verify_signature();
     println!("Is the signature valid? {}", is_signature_valid);
-
 }
-

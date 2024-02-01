@@ -1,6 +1,6 @@
-use serde::Serialize;
-use sha2::{Sha256, Digest};
 use hex;
+use serde::Serialize;
+use sha2::{Digest, Sha256};
 
 /// Hashes any serializable data using SHA-256 and returns the hash as a hexadecimal string.
 pub fn hash_serialize<T: Serialize>(data: &T) -> Result<String, serde_json::Error> {

@@ -1,5 +1,5 @@
-use sodiumoxide::crypto::sign;
 use hex;
+use sodiumoxide::crypto::sign;
 
 pub struct WalletKeypair {
     pub public_key: sign::PublicKey,
@@ -11,7 +11,10 @@ impl WalletKeypair {
     pub fn new() -> Self {
         sodiumoxide::init().expect("Failed to initialize sodiumoxide");
         let (public_key, secret_key) = sign::gen_keypair();
-        WalletKeypair { public_key, secret_key }
+        WalletKeypair {
+            public_key,
+            secret_key,
+        }
     }
 
     /// Signs a message with the WalletKeypair's private key.

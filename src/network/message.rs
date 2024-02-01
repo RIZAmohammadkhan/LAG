@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Defines the types of messages that can be sent in the network.
 #[derive(Serialize, Deserialize, Debug, Clone)]

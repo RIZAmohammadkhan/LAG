@@ -1,5 +1,5 @@
-use sha2::{Sha256, Digest};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -9,7 +9,7 @@ pub struct Block {
     pub data: String,
     pub previous_hash: String,
     pub hash: String,
-    pub nonce: u64,  // Nonce for Proof of Work
+    pub nonce: u64, // Nonce for Proof of Work
 }
 
 impl Block {
@@ -35,12 +35,10 @@ impl Block {
 
     /// Calculates the block's hash.
     pub fn calculate_hash(&self) -> String {
-        let contents = format!("{}:{}:{}:{}:{}",
-                               self.index, 
-                               self.timestamp, 
-                               self.previous_hash, 
-                               self.data,
-                               self.nonce);
+        let contents = format!(
+            "{}:{}:{}:{}:{}",
+            self.index, self.timestamp, self.previous_hash, self.data, self.nonce
+        );
         let mut hasher = Sha256::new();
         hasher.update(contents);
         format!("{:x}", hasher.finalize())
