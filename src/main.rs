@@ -32,7 +32,5 @@ fn main() {
     let is_signature_valid = transaction.verify_signature();
     println!("Is the signature valid? {}", is_signature_valid);
 
-    // This example simplifies many aspects of a real-world cryptocurrency transaction,
-    // such as handling transaction fees, nonce, and the actual transfer of balances.
 }
 
